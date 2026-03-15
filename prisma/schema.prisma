@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Moderation status for a listing
+enum ListingStatus {
+  pending
+  approved
+  rejected
+}
+
+/// Core listing model for the Map + Listings platform
+model Listing {
+  id             String        @id @default(uuid())
+  title          String
+  address        String
+  pricePerBed    Int
+  beds           Int
+  description    String
+  whatsappNumber String
+  latitude       Float
+  longitude      Float
+  metroStation   String        @default("")
+  metroDistance  String        @default("")
+  images         String[]      // Array of Cloudinary URLs
+  status         ListingStatus @default(pending)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status])             // Speeds up admin status-filtered queries
+  @@index([latitude, longitude]) // For future geospatial queries
+  @@map("listings")
+}
