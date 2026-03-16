@@ -1,5 +1,6 @@
-import { googleMapsService } from './googleMaps.service';
-import { LatLng } from '../types';
+import { googleMapsService } from "./googleMaps.service";
+import { LatLng } from "../types";
+import { constant } from "../utils/constants";
 
 /**
  * Haversine formula — computes the great-circle distance (in km) between
@@ -48,15 +49,24 @@ export class MetroService {
    * @returns MetroInfo with station name and formatted walking distance.
    *          Returns empty strings gracefully if no stations are found.
    */
-  async findNearestMetroAndDistance(lat: number, lng: number): Promise<MetroInfo> {
+  async findNearestMetroAndDistance(
+    lat: number,
+    lng: number,
+  ): Promise<MetroInfo> {
     const listingLocation: LatLng = { lat, lng };
 
     // Step 1 — Find candidate stations within 2 km
-    const stations = await googleMapsService.nearbyMetroStations(lat, lng, 2000);
-
+    const stations = await googleMapsService.nearbyMetroStations(
+      lat,
+      lng,
+      constant.RADIUS,
+    );
+    console.log(
+      `Found ${stations.length} nearby stations for location (${lat}, ${lng})`,
+    );
     if (stations.length === 0) {
       // No metro nearby — store empty strings rather than failing the listing creation
-      return { metroStation: '', metroDistance: '' };
+      return { metroStation: "", metroDistance: "" };
     }
 
     // Step 2 — Sort candidates by haversine distance and pick the closest
@@ -71,7 +81,10 @@ export class MetroService {
     const nearest = sorted[0]!.station;
 
     // Step 3 — Calculate actual walking distance for the nearest station
-    const distance = await this.calculateWalkingDistance(listingLocation, nearest.location);
+    const distance = await this.calculateWalkingDistance(
+      listingLocation,
+      nearest.location,
+    );
 
     return {
       metroStation: nearest.name,
@@ -86,9 +99,15 @@ export class MetroService {
    * If the Distance Matrix call fails (e.g. API quota exhausted),
    * we fall back to a haversine estimate rather than failing the listing.
    */
-  async calculateWalkingDistance(origin: LatLng, destination: LatLng): Promise<string> {
+  async calculateWalkingDistance(
+    origin: LatLng,
+    destination: LatLng,
+  ): Promise<string> {
     try {
-      const result = await googleMapsService.distanceMatrix(origin, destination);
+      const result = await googleMapsService.distanceMatrix(
+        origin,
+        destination,
+      );
       return result.text;
     } catch {
       // Graceful fallback: compute straight-line distance
