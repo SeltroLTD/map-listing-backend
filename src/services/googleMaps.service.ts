@@ -122,7 +122,7 @@ export class GoogleMapsService {
   async nearbyMetroStations(
     lat: number,
     lng: number,
-    radius = 2000,
+    radius = 5000,
   ): Promise<PlaceResult[]> {
     interface PlacesResponse {
       status: string;
