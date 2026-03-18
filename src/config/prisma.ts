@@ -1,5 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { config } from './config';
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import { config } from "./config";
 
 /**
  * Singleton Prisma client.
@@ -13,10 +15,16 @@ declare global {
   var __prisma: PrismaClient | undefined;
 }
 
+const connectionString = process.env.DATABASE_URL;
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+
 const prisma: PrismaClient =
   global.__prisma ??
   new PrismaClient({
-    log: config.isDev ? ['query', 'warn', 'error'] : ['error'],
+    adapter,
+    log: config.isDev ? ["query", "warn", "error"] : ["error"],
   });
 
 if (config.isDev) {
