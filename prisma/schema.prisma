@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 /// Moderation status for a listing
@@ -30,12 +29,12 @@ model Listing {
   longitude      Float
   metroStation   String        @default("")
   metroDistance  String        @default("")
-  images         String[]      // Array of Cloudinary URLs
+  images         String[] // Array of Cloudinary URLs
   status         ListingStatus @default(pending)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  @@index([status])             // Speeds up admin status-filtered queries
+  @@index([status]) // Speeds up admin status-filtered queries
   @@index([latitude, longitude]) // For future geospatial queries
   @@map("listings")
 }
