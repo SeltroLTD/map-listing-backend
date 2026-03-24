@@ -1,6 +1,6 @@
-import { createApp } from './app';
-import { config } from './config/config';
-import prisma from './config/prisma';
+import { createApp } from "./app";
+import { config } from "./config/config";
+import prisma from "./config/prisma";
 
 const app = createApp();
 
@@ -15,9 +15,9 @@ async function start(): Promise<void> {
   // Verify Prisma can connect to the database
   try {
     await prisma.$connect();
-    console.log('✅  Database connected');
+    console.log("✅ Database connected");
   } catch (err) {
-    console.error('❌  Failed to connect to database:', err);
+    console.error("❌  Failed to connect to database:", err);
     process.exit(1);
   }
 
@@ -35,17 +35,17 @@ async function start(): Promise<void> {
     console.log(`\n${signal} received — shutting down gracefully...`);
     server.close(async () => {
       await prisma.$disconnect();
-      console.log('👋  Server and database connection closed.');
+      console.log("👋  Server and database connection closed.");
       process.exit(0);
     });
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 
   // Catch unhandled promise rejections to prevent silent crashes
-  process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled Rejection:', reason);
+  process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled Rejection:", reason);
   });
 }
 
