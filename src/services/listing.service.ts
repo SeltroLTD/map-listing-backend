@@ -1,9 +1,9 @@
-import prisma from '../config/prisma';
-import { ListingStatus, CreateListingBody, ListingDto } from '../types';
-import { AppError } from '../middlewares/errorHandler';
-import { googleMapsService } from './googleMaps.service';
-import { metroService } from './metro.service';
-import { Listing } from '@prisma/client';
+import prisma from "../config/prisma";
+import { ListingStatus, CreateListingBody, ListingDto } from "../types";
+import { AppError } from "../middlewares/errorHandler";
+import { googleMapsService } from "./googleMaps.service";
+import { metroService } from "./metro.service";
+import { Listing } from "@prisma/client";
 
 /**
  * Maps a Prisma Listing record to the external ListingDto shape.
@@ -47,7 +47,7 @@ export class ListingService {
   async getListings(): Promise<ListingDto[]> {
     const listings = await prisma.listing.findMany({
       where: { status: ListingStatus.approved },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return listings.map(toDto);
   }
@@ -59,7 +59,7 @@ export class ListingService {
   async getListingById(id: string): Promise<ListingDto> {
     const listing = await prisma.listing.findUnique({ where: { id } });
     if (!listing) {
-      throw new AppError('Listing not found', 404);
+      throw new AppError("Listing not found", 404);
     }
     return toDto(listing);
   }
@@ -73,7 +73,7 @@ export class ListingService {
   async getListingsByStatus(status?: ListingStatus): Promise<ListingDto[]> {
     const listings = await prisma.listing.findMany({
       where: status ? { status } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return listings.map(toDto);
   }
@@ -103,18 +103,28 @@ export class ListingService {
     if (latitude === undefined || longitude === undefined) {
       // Only address supplied → geocode it
       if (!address) {
-        throw new AppError('Address or coordinates are required to create a listing', 400);
+        throw new AppError(
+          "Address or coordinates are required to create a listing",
+          400,
+        );
       }
-      
-      console.log(`[listing.service] Coordinates missing — attempting to geocode address: "${address}"`);
+
+      console.log(
+        `[listing.service] Coordinates missing — attempting to geocode address: "${address}"`,
+      );
       const geocoded = await googleMapsService.geocodeAddress(address);
       address = geocoded.address;
       latitude = geocoded.lat;
       longitude = geocoded.lng;
     } else if (!address) {
       // Only coordinates supplied → reverse geocode to get address
-      console.log(`[listing.service] Address missing — attempting to reverse geocode: (${latitude}, ${longitude})`);
-      const geocoded = await googleMapsService.reverseGeocode(latitude, longitude);
+      console.log(
+        `[listing.service] Address missing — attempting to reverse geocode: (${latitude}, ${longitude})`,
+      );
+      const geocoded = await googleMapsService.reverseGeocode(
+        latitude,
+        longitude,
+      );
       address = geocoded.address;
     }
 
@@ -156,11 +166,14 @@ export class ListingService {
    *
    * @throws AppError(404) when listing doesn't exist
    */
-  async updateListingStatus(id: string, status: ListingStatus): Promise<ListingDto> {
+  async updateListingStatus(
+    id: string,
+    status: ListingStatus,
+  ): Promise<ListingDto> {
     // Verify listing exists before attempting update
     const existing = await prisma.listing.findUnique({ where: { id } });
     if (!existing) {
-      throw new AppError('Listing not found', 404);
+      throw new AppError("Listing not found", 404);
     }
 
     const updated = await prisma.listing.update({
@@ -169,6 +182,21 @@ export class ListingService {
     });
 
     return toDto(updated);
+  }
+
+  /**
+   * Permanently deletes a listing by ID.
+   *
+   * @throws AppError(404) when listing doesn't exist
+   */
+  async deleteListingbyId(id: string): Promise<ListingDto> {
+    const existing = await prisma.listing.findUnique({ where: { id } });
+    if (!existing) {
+      throw new AppError("Listing not found", 404);
+    }
+
+    const deleted = await prisma.listing.delete({ where: { id } });
+    return toDto(deleted);
   }
 }
 
