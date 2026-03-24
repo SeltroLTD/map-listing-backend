@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { listingService } from '../services/listing.service';
-import { ListingStatus } from '../types';
-import { sendSuccess } from '../utils/response';
+import { Request, Response, NextFunction } from "express";
+import { listingService } from "../services/listing.service";
+import { ListingStatus } from "../types";
+import { sendSuccess } from "../utils/response";
 
 /**
  * AdminController
@@ -19,14 +19,16 @@ export class AdminController {
    * Returns listings filtered by status query param.
    * Defaults to returning ALL listings when status is omitted.
    */
-  async getAdminListings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getAdminListings(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
-      const rawStatus = req.query['status'] as string | undefined;
+      const rawStatus = req.query["status"] as string | undefined;
 
       // Parse status string into the enum (already validated by middleware)
-      const status = rawStatus
-        ? (rawStatus as ListingStatus)
-        : undefined;
+      const status = rawStatus ? (rawStatus as ListingStatus) : undefined;
 
       const listings = await listingService.getListingsByStatus(status);
       sendSuccess(res, listings);
@@ -39,10 +41,17 @@ export class AdminController {
    * PATCH /api/admin/listings/:id/approve
    * Sets listing status to "approved".
    */
-  async approveListing(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async approveListing(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
       const { id } = req.params;
-      const listing = await listingService.updateListingStatus(id, ListingStatus.approved);
+      const listing = await listingService.updateListingStatus(
+        id,
+        ListingStatus.approved,
+      );
       sendSuccess(res, listing);
     } catch (err) {
       next(err);
@@ -53,16 +62,35 @@ export class AdminController {
    * PATCH /api/admin/listings/:id/reject
    * Sets listing status to "rejected".
    */
-  async rejectListing(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async rejectListing(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
       const { id } = req.params;
-      const listing = await listingService.updateListingStatus(id, ListingStatus.rejected);
+      const listing = await listingService.updateListingStatus(
+        id,
+        ListingStatus.rejected,
+      );
       sendSuccess(res, listing);
     } catch (err) {
       next(err);
     }
   }
+  async deleteListing(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const deletedListing = await listingService.deleteListingbyId(id);
+      sendSuccess(res, { deleted: true, listing: deletedListing });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
-
 // Export singleton
 export const adminController = new AdminController();

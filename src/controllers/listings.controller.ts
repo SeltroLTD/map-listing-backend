@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { listingService } from '../services/listing.service';
-import { CreateListingBody } from '../types';
-import { sendSuccess } from '../utils/response';
+import { Request, Response, NextFunction } from "express";
+import { listingService } from "../services/listing.service";
+import { CreateListingBody } from "../types";
+import { sendSuccess } from "../utils/response";
 
 /**
  * ListingsController
@@ -21,7 +21,11 @@ export class ListingsController {
    * GET /api/listings
    * Returns all approved listings.
    */
-  async getListings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getListings(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
       const listings = await listingService.getListings();
       sendSuccess(res, listings);
@@ -35,10 +39,27 @@ export class ListingsController {
    * Returns a single listing by ID.
    * Returns 404 if not found.
    */
-  async getListingById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getListingById(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
       const { id } = req.params;
       const listing = await listingService.getListingById(id);
+      sendSuccess(res, listing);
+    } catch (err) {
+      next(err);
+    }
+  }
+  async deleteListing(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const listing = await listingService.deleteListingbyId(id);
       sendSuccess(res, listing);
     } catch (err) {
       next(err);
@@ -50,19 +71,23 @@ export class ListingsController {
    * Creates a new listing (status = pending).
    * Returns 201 with the created listing.
    */
-  async createListing(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createListing(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
-      console.log('--- [POST /api/listings] Incoming ---');
-      console.log('Body:', JSON.stringify(req.body, null, 2));
+      console.log("--- [POST /api/listings] Incoming ---");
+      console.log("Body:", JSON.stringify(req.body, null, 2));
 
       const body = req.body as CreateListingBody;
       const listing = await listingService.createListing(body);
-      
-      console.log('--- [POST /api/listings] Success ---');
+
+      console.log("--- [POST /api/listings] Success ---");
       sendSuccess(res, listing, 201);
     } catch (err) {
-      console.error('--- [POST /api/listings] Failed ---');
-      console.error('Error:', err);
+      console.error("--- [POST /api/listings] Failed ---");
+      console.error("Error:", err);
       next(err);
     }
   }
