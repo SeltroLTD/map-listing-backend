@@ -30,10 +30,20 @@ export class GoogleMapsService {
    */
   private async get<T>(endpoint: string, params: Record<string, string>): Promise<T> {
     const url = `${this.baseUrl}/${endpoint}/json`;
+    console.log(`[Google API] Request: ${endpoint}`);
+
     const response = await axios.get<T>(url, {
       params: { ...params, key: this.apiKey },
-      timeout: 10_000, // 10 s – prevents hanging requests from blocking the server
+      timeout: 10_000,
     });
+
+    // Typescript narrowed check for status (if present in response)
+    const data = response.data as any;
+    if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      console.error(`[Google API] Error status: ${data.status}`);
+      console.error(`[Google API] Details:`, JSON.stringify(data, null, 2));
+    }
+
     return response.data;
   }
 
@@ -58,6 +68,10 @@ export class GoogleMapsService {
 
     if (data.status === 'ZERO_RESULTS') {
       throw new AppError(`Could not geocode address: "${address}"`, 400);
+    }
+
+    if (data.status === 'REQUEST_DENIED') {
+      throw new AppError('Google Maps API Error: REQUEST_DENIED. Check your API Key permissions and ensure the Geocoding API is enabled.', 502);
     }
 
     if (data.status !== 'OK' || !data.results[0]) {
@@ -95,6 +109,10 @@ export class GoogleMapsService {
 
     if (data.status === 'ZERO_RESULTS') {
       throw new AppError(`No address found for coordinates (${lat}, ${lng})`, 400);
+    }
+
+    if (data.status === 'REQUEST_DENIED') {
+      throw new AppError('Google Maps API Error: REQUEST_DENIED (Reverse Geocoding). Check Key permissions.', 502);
     }
 
     if (data.status !== 'OK' || !data.results[0]) {
@@ -144,6 +162,11 @@ export class GoogleMapsService {
       return [];
     }
 
+    if (data.status === 'REQUEST_DENIED') {
+      console.error('[Google API] Places API Request Denied. Check permission for Places API (New).');
+      throw new AppError('Google Maps Places API error: REQUEST_DENIED', 502);
+    }
+
     if (data.status !== 'OK') {
       throw new AppError(`Places API error: ${data.status}`, 502);
     }
@@ -183,6 +206,10 @@ export class GoogleMapsService {
       mode: 'walking',
       units: 'metric',
     });
+
+    if (data.status === 'REQUEST_DENIED') {
+      throw new AppError('Google Maps Distance Matrix API error: REQUEST_DENIED', 502);
+    }
 
     if (data.status !== 'OK') {
       throw new AppError(`Distance Matrix API error: ${data.status}`, 502);
