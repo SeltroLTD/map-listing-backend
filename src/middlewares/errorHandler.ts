@@ -56,7 +56,10 @@ export function errorHandler(
   }
 
   // Unexpected / programming errors — log & hide details in production
-  console.error('[Unhandled Error]', err);
+  console.error('[Unhandled Error] Caught by global handler:', err);
+  if (err.stack) {
+    console.error('Stack Trace:', err.stack);
+  }
 
   sendError(
     res,

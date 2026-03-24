@@ -90,22 +90,30 @@ export class ListingService {
    *
    * After coordinates are resolved, metro station detection runs before save.
    */
-  async createListing(body: CreateListingBody): Promise<ListingDto> {
-    let { address, latitude, longitude } = body;
+  async createListing(body: any): Promise<ListingDto> {
+    // ── Pre-process: Handle shorthand lat/lng aliases ─────────────────────────
+    // Some frontends might send "lat" instead of "latitude". We'll map them
+    // to ensure we don't hit the Geocoding API if we already have coords.
+    let latitude = body.latitude ?? body.lat;
+    let longitude = body.longitude ?? body.lng;
+    let address = body.address;
 
     // ── Step 1: Resolve missing location data ──────────────────────────────────
 
     if (latitude === undefined || longitude === undefined) {
       // Only address supplied → geocode it
       if (!address) {
-        throw new AppError('Address is required when coordinates are not provided', 400);
+        throw new AppError('Address or coordinates are required to create a listing', 400);
       }
+      
+      console.log(`[listing.service] Coordinates missing — attempting to geocode address: "${address}"`);
       const geocoded = await googleMapsService.geocodeAddress(address);
-      address = geocoded.address; // Use the normalised/formatted address from Google
+      address = geocoded.address;
       latitude = geocoded.lat;
       longitude = geocoded.lng;
     } else if (!address) {
       // Only coordinates supplied → reverse geocode to get address
+      console.log(`[listing.service] Address missing — attempting to reverse geocode: (${latitude}, ${longitude})`);
       const geocoded = await googleMapsService.reverseGeocode(latitude, longitude);
       address = geocoded.address;
     }

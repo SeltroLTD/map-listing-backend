@@ -52,7 +52,16 @@ export class MetroService {
     const listingLocation: LatLng = { lat, lng };
 
     // Step 1 — Find candidate stations within 2 km
-    const stations = await googleMapsService.nearbyMetroStations(lat, lng, 2000);
+    // Wrap in try/catch: if the Places API fails (e.g. REQUEST_DENIED due to
+    // a missing/invalid API key or disabled billing), we gracefully skip metro
+    // data rather than failing the entire listing-creation request.
+    let stations: Awaited<ReturnType<typeof googleMapsService.nearbyMetroStations>> = [];
+    try {
+      stations = await googleMapsService.nearbyMetroStations(lat, lng, 2000);
+    } catch (err) {
+      console.error('[metro] nearbyMetroStations failed — skipping metro data:', err);
+      return { metroStation: '', metroDistance: '' };
+    }
 
     if (stations.length === 0) {
       // No metro nearby — store empty strings rather than failing the listing creation

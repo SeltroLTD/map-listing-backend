@@ -52,10 +52,17 @@ export class ListingsController {
    */
   async createListing(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log('--- [POST /api/listings] Incoming ---');
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+
       const body = req.body as CreateListingBody;
       const listing = await listingService.createListing(body);
+      
+      console.log('--- [POST /api/listings] Success ---');
       sendSuccess(res, listing, 201);
     } catch (err) {
+      console.error('--- [POST /api/listings] Failed ---');
+      console.error('Error:', err);
       next(err);
     }
   }
