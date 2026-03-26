@@ -1,7 +1,7 @@
-import axios from 'axios';
-import { config } from '../config/config';
-import { AppError } from '../middlewares/errorHandler';
-import { GeocodeResult, PlaceResult, DistanceResult, LatLng } from '../types';
+import axios from "axios";
+import { config } from "../config/config";
+import { AppError } from "../middlewares/errorHandler";
+import { GeocodeResult, PlaceResult, DistanceResult, LatLng } from "../types";
 
 /**
  * GoogleMapsService
@@ -17,7 +17,7 @@ import { GeocodeResult, PlaceResult, DistanceResult, LatLng } from '../types';
  */
 export class GoogleMapsService {
   private readonly apiKey: string;
-  private readonly baseUrl = 'https://maps.googleapis.com/maps/api';
+  private readonly baseUrl = "https://maps.googleapis.com/maps/api";
 
   constructor() {
     this.apiKey = config.google.mapsApiKey;
@@ -28,7 +28,10 @@ export class GoogleMapsService {
   /**
    * Appends the API key to any params object before dispatching the request.
    */
-  private async get<T>(endpoint: string, params: Record<string, string>): Promise<T> {
+  private async get<T>(
+    endpoint: string,
+    params: Record<string, string>,
+  ): Promise<T> {
     const url = `${this.baseUrl}/${endpoint}/json`;
     console.log(`[Google API] Request: ${endpoint}`);
 
@@ -39,7 +42,7 @@ export class GoogleMapsService {
 
     // Typescript narrowed check for status (if present in response)
     const data = response.data as any;
-    if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+    if (data.status && data.status !== "OK" && data.status !== "ZERO_RESULTS") {
       console.error(`[Google API] Error status: ${data.status}`);
       console.error(`[Google API] Details:`, JSON.stringify(data, null, 2));
     }
@@ -64,17 +67,20 @@ export class GoogleMapsService {
       }>;
     }
 
-    const data = await this.get<GeoResponse>('geocode', { address });
+    const data = await this.get<GeoResponse>("geocode", { address });
 
-    if (data.status === 'ZERO_RESULTS') {
+    if (data.status === "ZERO_RESULTS") {
       throw new AppError(`Could not geocode address: "${address}"`, 400);
     }
 
-    if (data.status === 'REQUEST_DENIED') {
-      throw new AppError('Google Maps API Error: REQUEST_DENIED. Check your API Key permissions and ensure the Geocoding API is enabled.', 502);
+    if (data.status === "REQUEST_DENIED") {
+      throw new AppError(
+        "Google Maps API Error: REQUEST_DENIED. Check your API Key permissions and ensure the Geocoding API is enabled.",
+        502,
+      );
     }
 
-    if (data.status !== 'OK' || !data.results[0]) {
+    if (data.status !== "OK" || !data.results[0]) {
       throw new AppError(`Geocoding API error: ${data.status}`, 502);
     }
 
@@ -103,19 +109,25 @@ export class GoogleMapsService {
       }>;
     }
 
-    const data = await this.get<ReverseGeoResponse>('geocode', {
+    const data = await this.get<ReverseGeoResponse>("geocode", {
       latlng: `${lat},${lng}`,
     });
 
-    if (data.status === 'ZERO_RESULTS') {
-      throw new AppError(`No address found for coordinates (${lat}, ${lng})`, 400);
+    if (data.status === "ZERO_RESULTS") {
+      throw new AppError(
+        `No address found for coordinates (${lat}, ${lng})`,
+        400,
+      );
     }
 
-    if (data.status === 'REQUEST_DENIED') {
-      throw new AppError('Google Maps API Error: REQUEST_DENIED (Reverse Geocoding). Check Key permissions.', 502);
+    if (data.status === "REQUEST_DENIED") {
+      throw new AppError(
+        "Google Maps API Error: REQUEST_DENIED (Reverse Geocoding). Check Key permissions.",
+        502,
+      );
     }
 
-    if (data.status !== 'OK' || !data.results[0]) {
+    if (data.status !== "OK" || !data.results[0]) {
       throw new AppError(`Reverse Geocoding API error: ${data.status}`, 502);
     }
 
@@ -134,13 +146,13 @@ export class GoogleMapsService {
    *
    * @param lat     - Listing latitude
    * @param lng     - Listing longitude
-   * @param radius  - Search radius in metres (default: 2000 m)
+   * @param radius  - Search radius in metres (default: 90000 m)
    * @returns Array of places sorted by distance (closest first), capped at 5
    */
   async nearbyMetroStations(
     lat: number,
     lng: number,
-    radius = 5000,
+    radius = 90000,
   ): Promise<PlaceResult[]> {
     interface PlacesResponse {
       status: string;
@@ -151,23 +163,25 @@ export class GoogleMapsService {
       }>;
     }
 
-    const data = await this.get<PlacesResponse>('place/nearbysearch', {
+    const data = await this.get<PlacesResponse>("place/nearbysearch", {
       location: `${lat},${lng}`,
       radius: String(radius),
-      type: 'subway_station',
+      type: "subway_station",
     });
 
     // ZERO_RESULTS just means no stations nearby — not an error we should throw
-    if (data.status === 'ZERO_RESULTS') {
+    if (data.status === "ZERO_RESULTS") {
       return [];
     }
 
-    if (data.status === 'REQUEST_DENIED') {
-      console.error('[Google API] Places API Request Denied. Check permission for Places API (New).');
-      throw new AppError('Google Maps Places API error: REQUEST_DENIED', 502);
+    if (data.status === "REQUEST_DENIED") {
+      console.error(
+        "[Google API] Places API Request Denied. Check permission for Places API (New).",
+      );
+      throw new AppError("Google Maps Places API error: REQUEST_DENIED", 502);
     }
 
-    if (data.status !== 'OK') {
+    if (data.status !== "OK") {
       throw new AppError(`Places API error: ${data.status}`, 502);
     }
 
@@ -188,7 +202,10 @@ export class GoogleMapsService {
    * @param destination - End point (metro station location)
    * @returns DistanceResult with human-readable text and numeric metres value
    */
-  async distanceMatrix(origin: LatLng, destination: LatLng): Promise<DistanceResult> {
+  async distanceMatrix(
+    origin: LatLng,
+    destination: LatLng,
+  ): Promise<DistanceResult> {
     interface DistanceMatrixResponse {
       status: string;
       rows: Array<{
@@ -200,25 +217,28 @@ export class GoogleMapsService {
       }>;
     }
 
-    const data = await this.get<DistanceMatrixResponse>('distancematrix', {
+    const data = await this.get<DistanceMatrixResponse>("distancematrix", {
       origins: `${origin.lat},${origin.lng}`,
       destinations: `${destination.lat},${destination.lng}`,
-      mode: 'walking',
-      units: 'metric',
+      mode: "walking",
+      units: "metric",
     });
 
-    if (data.status === 'REQUEST_DENIED') {
-      throw new AppError('Google Maps Distance Matrix API error: REQUEST_DENIED', 502);
+    if (data.status === "REQUEST_DENIED") {
+      throw new AppError(
+        "Google Maps Distance Matrix API error: REQUEST_DENIED",
+        502,
+      );
     }
 
-    if (data.status !== 'OK') {
+    if (data.status !== "OK") {
       throw new AppError(`Distance Matrix API error: ${data.status}`, 502);
     }
 
     const element = data.rows[0]?.elements[0];
 
-    if (!element || element.status !== 'OK') {
-      throw new AppError('Could not calculate walking distance', 502);
+    if (!element || element.status !== "OK") {
+      throw new AppError("Could not calculate walking distance", 502);
     }
 
     return {

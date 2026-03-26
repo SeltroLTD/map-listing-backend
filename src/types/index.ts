@@ -1,9 +1,21 @@
 import { ListingStatus } from '@prisma/client';
 
-// ─── Re-export Prisma enum so the rest of the app doesn't import Prisma directly ───
+// ─── Re-export Prisma enums ────────────────────────────────────────────────
 export { ListingStatus };
 
-// ─── Standard API Response shapes ───────────────────────────────────────────────
+/**
+ * Role string-literal union type, matching the Prisma schema Role enum values.
+ * We define this locally because @prisma/client in Prisma 7 does not re-export
+ * enum types directly. The const object provides runtime values for comparisons.
+ */
+export type Role = 'ADMIN' | 'CUSTOMER' | 'HOTEL';
+export const Role = {
+  ADMIN: 'ADMIN' as Role,
+  CUSTOMER: 'CUSTOMER' as Role,
+  HOTEL: 'HOTEL' as Role,
+} as const;
+
+// ─── Standard API Response shapes ─────────────────────────────────────────
 
 export interface ApiSuccessResponse<T = unknown> {
   success: true;
@@ -13,18 +25,13 @@ export interface ApiSuccessResponse<T = unknown> {
 export interface ApiErrorResponse {
   success: false;
   error: string;
-  details?: unknown; // Validation errors, stack traces (dev only), etc.
+  details?: unknown;
 }
 
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-// ─── Listing DTOs ────────────────────────────────────────────────────────────────
+// ─── Listing DTOs ──────────────────────────────────────────────────────────
 
-/**
- * Shape of a listing returned to external callers.
- * Matches the Prisma model; could be narrowed in the future
- * (e.g. hide internal fields) without touching controllers.
- */
 export interface ListingDto {
   id: string;
   title: string;
@@ -41,15 +48,35 @@ export interface ListingDto {
   status: ListingStatus;
   createdAt: Date;
   updatedAt: Date;
+  userId?: string | null;
 }
 
-// ─── Request Bodies ───────────────────────────────────────────────────────────────
+// ─── Auth DTOs ─────────────────────────────────────────────────────────────
 
-/**
- * Payload sent by the frontend when creating a new listing.
- * Either (latitude + longitude) OR (address) must be present —
- * the service resolves whichever is missing.
- */
+export interface UserDto {
+  id: string;
+  name: string;
+  email: string;
+  provider: string;
+  role: Role;
+  createdAt: Date;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface JwtPayload {
+  sub: string;   // userId
+  email: string;
+  role: Role;
+  iat?: number;
+  exp?: number;
+}
+
+// ─── Request Bodies ────────────────────────────────────────────────────────
+
 export interface CreateListingBody {
   title: string;
   address?: string;
@@ -59,10 +86,22 @@ export interface CreateListingBody {
   whatsappNumber: string;
   latitude?: number;
   longitude?: number;
-  images: string[]; // Cloudinary URLs
+  images: string[];
 }
 
-// ─── Google Maps API response shapes (subset of what we use) ─────────────────────
+export interface RegisterBody {
+  name: string;
+  email: string;
+  password: string;
+  role?: 'CUSTOMER' | 'HOTEL';
+}
+
+export interface LoginBody {
+  email: string;
+  password: string;
+}
+
+// ─── Google Maps API response shapes ──────────────────────────────────────
 
 export interface LatLng {
   lat: number;
@@ -82,6 +121,6 @@ export interface PlaceResult {
 }
 
 export interface DistanceResult {
-  text: string;  // e.g. "850 m"
-  value: number; // metres
+  text: string;
+  value: number;
 }

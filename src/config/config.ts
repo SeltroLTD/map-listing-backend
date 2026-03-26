@@ -46,6 +46,29 @@ export const config = {
     get mapsApiKey() {
       return requireEnv('GOOGLE_MAPS_API_KEY');
     },
+    get clientId() {
+      return requireEnv('GOOGLE_CLIENT_ID');
+    },
+    get clientSecret() {
+      return requireEnv('GOOGLE_CLIENT_SECRET');
+    },
+  },
+
+  jwt: {
+    get secret() {
+      return requireEnv('JWT_SECRET');
+    },
+    get refreshSecret() {
+      return requireEnv('JWT_REFRESH_SECRET');
+    },
+    accessExpiresIn: '15m',
+    refreshExpiresIn: '7d',
+  },
+
+  app: {
+    get frontendUrl() {
+      return process.env['FRONTEND_URL'] ?? 'http://localhost:5173';
+    },
   },
 
   cors: {
