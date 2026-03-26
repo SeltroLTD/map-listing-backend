@@ -2,11 +2,20 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  HOTEL
 }
 
 /// Moderation status for a listing
@@ -14,6 +23,25 @@ enum ListingStatus {
   pending
   approved
   rejected
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+/// User model supporting email/password and Google OAuth
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  password     String?   // null for OAuth-only users
+  provider     String    @default("email") // "email" | "google"
+  role         Role      @default(CUSTOMER)
+  refreshToken String?   // hashed refresh token stored server-side
+  createdAt    DateTime  @default(now())
+
+  listings     Listing[]
+
+  @@index([email])
+  @@map("users")
 }
 
 /// Core listing model for the Map + Listings platform
@@ -29,12 +57,17 @@ model Listing {
   longitude      Float
   metroStation   String        @default("")
   metroDistance  String        @default("")
-  images         String[] // Array of Cloudinary URLs
+  images         String[]      // Array of Cloudinary URLs
   status         ListingStatus @default(pending)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  @@index([status]) // Speeds up admin status-filtered queries
+  // Optional owner – null for listings created before auth was added
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])            // Speeds up admin status-filtered queries
   @@index([latitude, longitude]) // For future geospatial queries
+  @@index([userId])
   @@map("listings")
 }

@@ -5,20 +5,23 @@ import {
   validateStatusQuery,
   handleValidationErrors,
 } from '../middlewares/validation';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { roleMiddleware } from '../middlewares/auth.middleware';
+import { Role } from '../types';
 
 const router = Router();
 
 /**
- * Admin Routes
+ * Admin Routes — all protected by authMiddleware + ADMIN role
  *
  * GET   /api/admin/listings?status=pending  → filter listings by status
  * PATCH /api/admin/listings/:id/approve     → approve a listing
  * PATCH /api/admin/listings/:id/reject      → reject a listing
  * DELETE /api/admin/listings/:id            → permanently delete a listing
- *
- * Phase 2 note: Add auth middleware here before delegating to the controller:
- *   router.use(authMiddleware);
  */
+
+// Apply auth + ADMIN role guard to all admin routes
+router.use(authMiddleware, roleMiddleware([Role.ADMIN]));
 
 router.get(
   '/listings',
