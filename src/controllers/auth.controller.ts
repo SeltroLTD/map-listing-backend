@@ -18,7 +18,7 @@ passport.use(
       clientSecret: (() => {
         try { return config.google.clientSecret; } catch { return 'NOT_SET'; }
       })(),
-      callbackURL: `${(() => { try { return config.app.frontendUrl.replace('3000', '3001'); } catch { return 'http://localhost:3001'; }})()}/api/auth/google/callback`,
+      callbackURL: `${(() => { try { return config.app.frontendUrl.replace('3000', '3001'); } catch { return 'http://localhost:3001'; } })()}/api/auth/google/callback`,
       scope: ['profile', 'email'],
     },
     async (_accessToken, _refreshToken, profile: Profile, done) => {
@@ -41,9 +41,8 @@ export class AuthController {
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password, role } = req.body as RegisterBody & { role?: 'CUSTOMER' | 'HOTEL' };
-      const assignedRole = role === 'HOTEL' ? Role.HOTEL : Role.CUSTOMER;
-      const { user, tokens } = await authService.register(name, email, password, assignedRole);
+      const { name, email, password } = req.body as RegisterBody;
+      const { user, tokens } = await authService.register(name, email, password, Role.HOTEL);
       res.status(201).json({
         success: true,
         data: { user, ...tokens },
@@ -127,11 +126,11 @@ export class AuthController {
   googleCallback(req: Request, res: Response, next: NextFunction): void {
     passport.authenticate('google', { session: false }, (err: Error | null, data: { user: unknown; tokens: { accessToken: string; refreshToken: string } } | null) => {
       if (err || !data) {
-        const frontendUrl = (() => { try { return config.app.frontendUrl; } catch { return 'http://localhost:3000'; }})();
+        const frontendUrl = (() => { try { return config.app.frontendUrl; } catch { return 'http://localhost:3000'; } })();
         res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
         return;
       }
-      const frontendUrl = (() => { try { return config.app.frontendUrl; } catch { return 'http://localhost:3000'; }})();
+      const frontendUrl = (() => { try { return config.app.frontendUrl; } catch { return 'http://localhost:3000'; } })();
       const params = new URLSearchParams({
         token: data.tokens.accessToken,
         refreshToken: data.tokens.refreshToken,
